@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Master Data - Proteksi</title>
+    <style>
+        /* Sama seperti style crud sebelumnya */
+        * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
+        body { background: #eef2f5; margin: 0; padding: 30px 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 28px; padding: 24px 30px; margin-bottom: 32px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        h2 { font-size: 1.7rem; font-weight: 600; margin-top: 0; color: #1e3b4a; border-left: 5px solid #2c7da0; padding-left: 18px; }
+        .flex-2col { display: flex; flex-wrap: wrap; gap: 30px; }
+        .col { flex: 1; min-width: 280px; }
+        .input-group { margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-weight: 600; color: #1e4663; font-size: 0.85rem; }
+        .input-group input { padding: 10px 14px; border: 1.5px solid #cfdee9; border-radius: 20px; }
+        .btn { background: #2c7da0; color: white; border: none; padding: 10px 20px; border-radius: 40px; font-weight: bold; cursor: pointer; margin-right: 10px; }
+        .btn-danger { background: #c44536; }
+        .btn-warning { background: #e6a017; }
+        .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e2edf2; }
+        th { background: #f1f6fa; font-weight: 600; }
+        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .notification { background: #e0f2e9; border-left: 5px solid #2c7da0; padding: 12px 18px; border-radius: 20px; margin-bottom: 20px; display: none; }
+        .error { background: #fff2e6; border-left-color: #c44536; }
+        hr { margin: 20px 0; }
+        .logout-btn { background: #5e6f7e; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+<div class="container" id="mainContainer" style="display: none;">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>📦 Kelola Data Master (Pekerja & Mesin)</h2>
+            <button id="logoutBtn" class="btn logout-btn" style="background:#5e6f7e;">🚪 Logout</button>
+        </div>
+        <div id="crudNotification" class="notification"></div>
+        <div class="flex-2col">
+            <div class="col">
+                <h3>👨‍🏭 Daftar Pekerja</h3>
+                <div class="input-group">
+                    <label>Nama Pekerja Baru</label>
+                    <input type="text" id="newPekerja" placeholder="Contoh: Slamet Riyadi">
+                </div>
+                <button class="btn" id="addPekerjaBtn">➕ Tambah Pekerja</button>
+                <hr>
+                <div class="table-wrapper" style="overflow-x:auto;">
+                    <table id="pekerjaTable">
+                        <thead><tr><th>Nama</th><th>Aksi</th></tr></thead>
+                        <tbody><tr><td colspan="2">Memuat...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col">
+                <h3>🏭 Daftar Mesin</h3>
+                <div class="input-group">
+                    <label>Nama Mesin Baru</label>
+                    <input type="text" id="newMesin" placeholder="Contoh: Mesin CNC B">
+                </div>
+                <button class="btn" id="addMesinBtn">➕ Tambah Mesin</button>
+                <hr>
+                <div class="table-wrapper" style="overflow-x:auto;">
+                    <table id="mesinTable">
+                        <thead><tr><th>Nama</th><th>Aksi</th></tr></thead>
+                        <tbody><tr><td colspan="2">Memuat...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <p style="font-size: 0.8rem; color: #5f7f8c;">⚠️ Perubahan akan langsung mempengaruhi dropdown di Input dan Laporan.</p>
+    </div>
+</div>
+<div id="loadingMsg" style="text-align:center; margin-top:50px;">Memeriksa otorisasi...</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGoxq_XsXGifT4wWWvDbwnNmJUUbg4G9ag2rZGotjzwSpw0GjSuhr1dTcOnBUABAqM/exec";
+
+    // Proteksi: cek session login
+    const isAuth = sessionStorage.getItem('crud_authenticated');
+    if (!isAuth || isAuth !== 'true') {
+        window.location.href = 'login.html?redirect=crud_master.html';
+    }
+
+    // Tampilkan container setelah autentikasi
+    document.getElementById('mainContainer').style.display = 'block';
+    document.getElementById('loadingMsg').style.display = 'none';
+
+    // Fungsi-fungsi CRUD sama seperti sebelumnya
+    function showMessage(msg, isError = false) {
+        const notif = document.getElementById('crudNotification');
+        notif.textContent = msg;
+        notif.className = 'notification' + (isError ? ' error' : '');
+        notif.style.display = 'block';
+        setTimeout(() => { notif.style.display = 'none'; }, 3000);
+    }
+
+    async function callAPI(action, data = {}) {
+        const payload = { action, ...data };
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (result.status !== 'success') throw new Error(result.message || 'Terjadi kesalahan');
+        return result;
+    }
+
+    async function loadMasterCrud() {
+        try {
+            const [mesinRes, pekerjaRes] = await Promise.all([
+                fetch(`${SCRIPT_URL}?action=getMesin`),
+                fetch(`${SCRIPT_URL}?action=getPekerja`)
+            ]);
+            const mesinData = await mesinRes.json();
+            const pekerjaData = await pekerjaRes.json();
+            if (mesinData.status === 'success') renderMesinCrud(mesinData.data.mesin);
+            else renderMesinCrud([]);
+            if (pekerjaData.status === 'success') renderPekerjaCrud(pekerjaData.data.pekerja);
+            else renderPekerjaCrud([]);
+        } catch (err) {
+            showMessage('Gagal memuat data master CRUD', true);
+        }
+    }
+
+    function renderPekerjaCrud(list) {
+        const tbody = document.querySelector('#pekerjaTable tbody');
+        if (!list.length) { tbody.innerHTML = '<tr><td colspan="2">Belum ada data</td></tr>'; return; }
+        let html = '';
+        list.forEach(nama => {
+            html += `<tr>
+                        <td>${escapeHtml(nama)}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning" onclick="editPekerjaCrud('${escapeHtml(nama)}')">✏️ Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deletePekerjaCrud('${escapeHtml(nama)}')">🗑️ Hapus</button>
+                        </td>
+                     </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function renderMesinCrud(list) {
+        const tbody = document.querySelector('#mesinTable tbody');
+        if (!list.length) { tbody.innerHTML = '<tr><td colspan="2">Belum ada data</td></tr>'; return; }
+        let html = '';
+        list.forEach(nama => {
+            html += `<tr>
+                        <td>${escapeHtml(nama)}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-warning" onclick="editMesinCrud('${escapeHtml(nama)}')">✏️ Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteMesinCrud('${escapeHtml(nama)}')">🗑️ Hapus</button>
+                        </td>
+                     </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m) { if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m; }); }
+
+    window.editPekerjaCrud = async function(oldName) {
+        const newName = prompt('Edit nama pekerja:', oldName);
+        if (!newName || newName === oldName) return;
+        try {
+            await callAPI('updatePekerja', { oldName, newName });
+            showMessage('Pekerja berhasil diupdate', false);
+            loadMasterCrud();
+        } catch (err) { showMessage(err.message, true); }
+    };
+    window.deletePekerjaCrud = async function(nama) {
+        if (!confirm(`Hapus pekerja "${nama}"? Data produksi terkait tidak terhapus.`)) return;
+        try {
+            await callAPI('deletePekerja', { nama });
+            showMessage('Pekerja dihapus', false);
+            loadMasterCrud();
+        } catch (err) { showMessage(err.message, true); }
+    };
+    window.editMesinCrud = async function(oldName) {
+        const newName = prompt('Edit nama mesin:', oldName);
+        if (!newName || newName === oldName) return;
+        try {
+            await callAPI('updateMesin', { oldName, newName });
+            showMessage('Mesin berhasil diupdate', false);
+            loadMasterCrud();
+        } catch (err) { showMessage(err.message, true); }
+    };
+    window.deleteMesinCrud = async function(nama) {
+        if (!confirm(`Hapus mesin "${nama}"?`)) return;
+        try {
+            await callAPI('deleteMesin', { nama });
+            showMessage('Mesin dihapus', false);
+            loadMasterCrud();
+        } catch (err) { showMessage(err.message, true); }
+    };
+
+    async function addPekerja() {
+        const nama = document.getElementById('newPekerja').value.trim();
+        if (!nama) return showMessage('Nama pekerja tidak boleh kosong', true);
+        try {
+            await callAPI('addPekerja', { nama });
+            showMessage('Pekerja ditambahkan', false);
+            document.getElementById('newPekerja').value = '';
+            loadMasterCrud();
+        } catch (err) { showMessage(err.message, true); }
+    }
+    async function addMesin() {
+        const nama = document.getElementById('newMesin').value.trim();
+        if (!nama) return showMessage('Nama mesin tidak boleh kosong', true);
+        try {
+            await callAPI('addMesin', { nama });
+            showMessage('Mesin ditambahkan', false);
+            document.getElementById('newMesin').value = '';
+            loadMasterCrud();
+        } catch (err) { showMessage(err.message, true); }
+    }
+
+    document.getElementById('addPekerjaBtn').addEventListener('click', addPekerja);
+    document.getElementById('addMesinBtn').addEventListener('click', addMesin);
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        sessionStorage.removeItem('crud_authenticated');
+        sessionStorage.removeItem('crud_user');
+        window.location.href = 'index.html';
+    });
+
+    loadMasterCrud();
+</script>
+</body>
+</html>

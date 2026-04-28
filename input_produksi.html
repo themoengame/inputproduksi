@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Produksi</title>
+    <style>
+        * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
+        body { background: #e9f0f5; margin: 0; padding: 30px 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { max-width: 900px; width: 100%; background: white; border-radius: 32px; padding: 28px 32px; box-shadow: 0 12px 28px rgba(0,0,0,0.08); }
+        h2 { font-size: 1.8rem; font-weight: 600; color: #1e3b4a; margin-top: 0; margin-bottom: 24px; border-left: 5px solid #2c7da0; padding-left: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 28px; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-group label { font-weight: 600; color: #1e4663; font-size: 0.85rem; }
+        .input-group input, .input-group select { padding: 12px 14px; border: 1.5px solid #cfdee9; border-radius: 20px; font-size: 0.95rem; background: white; }
+        .btn { background: #2c7da0; color: white; border: none; padding: 12px 28px; border-radius: 40px; font-weight: bold; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+        .btn-secondary { background: #5e8b7e; }
+        .btn:hover { filter: brightness(0.92); transform: translateY(-1px); }
+        .warning { background: #fff7e5; border-left: 5px solid #f4b942; padding: 12px 18px; border-radius: 20px; margin: 16px 0; display: none; }
+        hr { margin: 20px 0; border-color: #e2edf2; }
+        .footer-note { font-size: 0.8rem; color: #5f7f8c; text-align: center; margin-top: 20px; }
+        @media (max-width: 700px) { .container { padding: 20px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>📋 Form Input Produksi Harian</h2>
+    <form id="productionForm">
+        <div class="form-grid">
+            <div class="input-group">
+                <label>🏭 Mesin</label>
+                <select id="mesin" required><option value="">Memuat mesin...</option></select>
+            </div>
+            <div class="input-group">
+                <label>👨‍🏭 Pekerja</label>
+                <select id="pekerja" required><option value="">Memuat pekerja...</option></select>
+            </div>
+            <div class="input-group">
+                <label>📄 Nama File / Proyek</label>
+                <input type="text" id="namaFile" required placeholder="Contoh: order_ABC">
+            </div>
+            <div class="input-group">
+                <label>🔢 Jumlah PCS target</label>
+                <input type="number" id="jumlahPcs" required min="1" value="100">
+            </div>
+            <div class="input-group">
+                <label>✅ Jumlah Dikerjakan</label>
+                <input type="number" id="jumlahDikerjakan" required min="0" value="100">
+            </div>
+            <div class="input-group">
+                <label>📊 Persentase (%)</label>
+                <input type="text" id="persentase" readonly style="background:#f4f8fc;">
+            </div>
+            <div class="input-group">
+                <label>💰 Total Semua (opsional)</label>
+                <input type="text" id="totalSemua" placeholder="Misal: 5.000.000">
+            </div>
+            <div class="input-group">
+                <label>🧑 Nama Pemesan</label>
+                <input type="text" id="namaPemesan" required>
+            </div>
+        </div>
+        <div style="display: flex; gap: 15px; justify-content: flex-end;">
+            <button type="button" class="btn" id="submitBtn">💾 Simpan Data</button>
+            <button type="reset" class="btn btn-secondary" id="resetBtn">↺ Reset</button>
+        </div>
+    </form>
+    <div id="formFeedback" class="warning"></div>
+    <hr>
+    <div class="footer-note">
+        ⚡ 2026 @ dev prototype<br>
+        Persentase default 100% (Jumlah Dikerjakan = Jumlah PCS).
+    </div>
+</div>
+
+<script>
+    // ================== GANTI DENGAN URL WEB APP ANDA ==================
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGoxq_XsXGifT4wWWvDbwnNmJUUbg4G9ag2rZGotjzwSpw0GjSuhr1dTcOnBUABAqM/exec";
+
+    // Helper notifikasi
+    function showFeedback(msg, isError = true) {
+        const fb = document.getElementById('formFeedback');
+        fb.style.display = 'block';
+        fb.innerHTML = isError ? `⚠️ ${msg}` : `✅ ${msg}`;
+        fb.style.background = isError ? '#fff2e6' : '#e0f2e9';
+        setTimeout(() => { fb.style.display = 'none'; }, 4000);
+    }
+
+    // Hitung persentase berdasarkan jumlah PCS dan dikerjakan
+    function updatePersentase() {
+        const target = parseFloat(document.getElementById('jumlahPcs').value) || 0;
+        const dikerjakan = parseFloat(document.getElementById('jumlahDikerjakan').value) || 0;
+        let persen = 0;
+        if (target > 0) {
+            persen = (dikerjakan / target) * 100;
+        } else if (target === 0 && dikerjakan === 0) {
+            persen = 100; // default jika kedua 0 (tapi target min 1)
+        } else {
+            persen = 0;
+        }
+        document.getElementById('persentase').value = persen.toFixed(2) + "%";
+    }
+
+    // Ambil data master (mesin & pekerja) dari Apps Script
+    async function loadMasterData() {
+        try {
+            const [mesinRes, pekerjaRes] = await Promise.all([
+                fetch(`${SCRIPT_URL}?action=getMesin`),
+                fetch(`${SCRIPT_URL}?action=getPekerja`)
+            ]);
+            const mesinData = await mesinRes.json();
+            const pekerjaData = await pekerjaRes.json();
+
+            const mesinSelect = document.getElementById('mesin');
+            const pekerjaSelect = document.getElementById('pekerja');
+
+            if (mesinData.status === 'success' && mesinData.data.mesin.length) {
+                mesinSelect.innerHTML = '<option value="">Pilih Mesin</option>';
+                mesinData.data.mesin.forEach(m => {
+                    mesinSelect.innerHTML += `<option value="${m}">${m}</option>`;
+                });
+            } else {
+                mesinSelect.innerHTML = '<option value="">Tidak ada data mesin</option>';
+                showFeedback("Gagal memuat data mesin", true);
+            }
+
+            if (pekerjaData.status === 'success' && pekerjaData.data.pekerja.length) {
+                pekerjaSelect.innerHTML = '<option value="">Pilih Pekerja</option>';
+                pekerjaData.data.pekerja.forEach(p => {
+                    pekerjaSelect.innerHTML += `<option value="${p}">${p}</option>`;
+                });
+            } else {
+                pekerjaSelect.innerHTML = '<option value="">Tidak ada data pekerja</option>';
+                showFeedback("Gagal memuat data pekerja", true);
+            }
+        } catch (err) {
+            console.error(err);
+            showFeedback("Gagal terhubung ke server. Periksa URL Apps Script.", true);
+        }
+    }
+
+    // Simpan data ke Google Sheets via POST
+    async function simpanData() {
+        const data = {
+            mesin: document.getElementById('mesin').value,
+            pekerja: document.getElementById('pekerja').value,
+            namaFile: document.getElementById('namaFile').value,
+            jumlahPcs: parseFloat(document.getElementById('jumlahPcs').value),
+            jumlahDikerjakan: parseFloat(document.getElementById('jumlahDikerjakan').value),
+            persentase: document.getElementById('persentase').value,
+            totalSemua: document.getElementById('totalSemua').value,
+            namaPemesan: document.getElementById('namaPemesan').value,
+            timestamp: new Date().toISOString()
+        };
+
+        if (!data.mesin || !data.pekerja || !data.namaFile || !data.jumlahPcs || !data.namaPemesan) {
+            showFeedback("Harap isi semua field wajib (Mesin, Pekerja, Nama File, Jumlah Pcs, Pemesan)", true);
+            return;
+        }
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                showFeedback("Data produksi berhasil disimpan!", false);
+                // Reset form tapi pertahankan default persentase 100%?
+                document.getElementById('productionForm').reset();
+                // Set default values agar persentase 100%
+                document.getElementById('jumlahPcs').value = "100";
+                document.getElementById('jumlahDikerjakan').value = "100";
+                updatePersentase();
+                // Kosongkan pemesan dan nama file agar memudahkan input berikutnya
+                document.getElementById('namaFile').value = "";
+                document.getElementById('namaPemesan').value = "";
+            } else {
+                throw new Error("Gagal simpan");
+            }
+        } catch (err) {
+            showFeedback("Gagal menyimpan data. Periksa koneksi atau URL.", true);
+        }
+    }
+
+    // Event listeners
+    document.getElementById('submitBtn').addEventListener('click', simpanData);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        document.getElementById('productionForm').reset();
+        // Set default 100%
+        document.getElementById('jumlahPcs').value = "100";
+        document.getElementById('jumlahDikerjakan').value = "100";
+        updatePersentase();
+    });
+    document.getElementById('jumlahPcs').addEventListener('input', updatePersentase);
+    document.getElementById('jumlahDikerjakan').addEventListener('input', updatePersentase);
+
+    // Inisialisasi: load master data & set default persentase 100%
+    window.addEventListener('DOMContentLoaded', () => {
+        loadMasterData();
+        // default 100%
+        document.getElementById('jumlahPcs').value = "100";
+        document.getElementById('jumlahDikerjakan').value = "100";
+        updatePersentase();
+    });
+</script>
+</body>
+</html>
