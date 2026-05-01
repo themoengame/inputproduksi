@@ -30,7 +30,7 @@
 <body>
 <div class="container">
     <div class="card">
-        <h2>📊 Laporan Produksi</h2>
+        <h2>📊 Filter & Laporan Produksi</h2>
         <div class="filter-bar">
             <div class="filter-item">
                 <label>🔧 Mesin</label>
@@ -62,11 +62,11 @@
                 <thead>
                     <tr>
                         <th>ID</th><th>Mesin</th><th>Pekerja</th><th>Nama File</th>
-                        <th>Jml Pcs</th><th>Dikerjakan</th><th>Persen</th><th>Total</th><th>Pemesan</th><th>Tanggal</th>
+                        <th>Jml Pcs</th><th>Dikerjakan</th><th>Persen</th><th>Pemesan</th><th>Tanggal</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="10" class="loading">Memuat data...</td></tr>
+                    <tr><td colspan="9" class="loading">Memuat data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -74,10 +74,8 @@
 </div>
 
 <script>
-    // ================== GANTI DENGAN URL WEB APP ANDA ==================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGoxq_XsXGifT4wWWvDbwnNmJUUbg4G9ag2rZGotjzwSpw0GjSuhr1dTcOnBUABAqM/exec";
 
-    // Ambil data master (untuk dropdown filter)
     async function loadFilterMaster() {
         try {
             const [mesinRes, pekerjaRes] = await Promise.all([
@@ -104,11 +102,10 @@
             }
         } catch (err) {
             console.error(err);
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="10">Gagal memuat data filter</td></tr>';
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="9">Gagal memuat data filter</td></tr>';
         }
     }
 
-    // Ambil laporan dari server dengan filter
     async function loadLaporan() {
         const mesin = document.getElementById('filterMesin').value;
         const pekerja = document.getElementById('filterPekerja').value;
@@ -119,8 +116,7 @@
         if (tglMulai) url += `&tglMulai=${tglMulai}`;
         if (tglSelesai) url += `&tglSelesai=${tglSelesai}`;
 
-        // Tampilkan loading
-        document.getElementById('tableBody').innerHTML = '<tr><td colspan="10" class="loading">Mengambil data...</td></tr>';
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="loading">Mengambil data...</td></tr>';
 
         try {
             const response = await fetch(url);
@@ -132,14 +128,14 @@
             }
         } catch (err) {
             console.error(err);
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="10">❌ Gagal memuat laporan. Periksa URL atau koneksi.</td></tr>';
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="9">❌ Gagal memuat laporan</td></tr>';
         }
     }
 
     function renderLaporan(data) {
         const tbody = document.getElementById('tableBody');
         if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Tidak ada data dengan filter tersebut</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Tidak ada data dengan filter tersebut</td></tr>';
             document.getElementById('totalRecords').innerText = '0';
             document.getElementById('avgPersen').innerText = '0%';
             document.getElementById('totalPcsKerja').innerText = '0';
@@ -166,17 +162,16 @@
         let html = '';
         data.forEach(item => {
             html += `<tr>
-                <td>${item.ID || '-'}</td>
-                <td>${escapeHtml(item.Mesin || '')}</td>
-                <td>${escapeHtml(item.Pekerja || '')}</td>
-                <td>${escapeHtml(item.NamaFile || '')}</td>
-                <td>${Number(item.JumlahPcs || 0).toLocaleString()}</td>
-                <td>${Number(item.JumlahDikerjakan || 0).toLocaleString()}</td>
-                <td>${item.Persentase || '0%'}</td>
-                <td>${escapeHtml(item.TotalSemua || '-')}</td>
-                <td>${escapeHtml(item.NamaPemesan || '')}</td>
-                <td>${item.Timestamp ? new Date(item.Timestamp).toLocaleDateString('id-ID') : '-'}</td>
-            </tr>`;
+                        <td>${item.ID || '-'}</td>
+                        <td>${escapeHtml(item.Mesin || '')}</td>
+                        <td>${escapeHtml(item.Pekerja || '')}</td>
+                        <td>${escapeHtml(item.NamaFile || '')}</td>
+                        <td>${Number(item.JumlahPcs || 0).toLocaleString()}</td>
+                        <td>${Number(item.JumlahDikerjakan || 0).toLocaleString()}</td>
+                        <td>${item.Persentase || '0%'}</td>
+                        <td>${escapeHtml(item.NamaPemesan || '')}</td>
+                        <td>${item.Timestamp ? new Date(item.Timestamp).toLocaleDateString('id-ID') : '-'}</td>
+                     </tr>`;
         });
         tbody.innerHTML = html;
     }
@@ -195,7 +190,7 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
         await loadFilterMaster();
-        await loadLaporan(); // langsung tampilkan semua data pertama kali
+        await loadLaporan();
     });
 </script>
 </body>
