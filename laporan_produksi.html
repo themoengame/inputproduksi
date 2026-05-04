@@ -3,109 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kelola Master Data</title>
+    <title>Laporan Produksi</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #eef2f5; margin: 0; padding: 30px 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container { max-width: 1400px; margin: 0 auto; }
         .card { background: white; border-radius: 28px; padding: 24px 30px; margin-bottom: 32px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-        h2 { font-size: 1.7rem; font-weight: 600; margin-top: 0; color: #1e3b4a; border-left: 5px solid #2c7da0; padding-left: 18px; }
-        .flex-2col { display: flex; flex-wrap: wrap; gap: 30px; }
-        .col { flex: 1; min-width: 280px; }
-        .input-group { margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
-        .input-group label { font-weight: 600; color: #1e4663; font-size: 0.85rem; }
-        .input-group input { padding: 10px 14px; border: 1.5px solid #cfdee9; border-radius: 20px; }
-        .btn { background: #2c7da0; color: white; border: none; padding: 10px 20px; border-radius: 40px; font-weight: bold; cursor: pointer; margin-right: 10px; }
-        .btn-danger { background: #c44536; }
-        .btn-warning { background: #e6a017; }
-        .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e2edf2; }
+        h2 { font-size: 1.7rem; font-weight: 600; margin-top: 0; color: #1e3b4a; border-left: 5px solid #2c7da0; padding-left: 18px; margin-bottom: 1.5rem; }
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; background: #f8fafc; padding: 18px 22px; border-radius: 32px; margin-bottom: 25px; }
+        .filter-item { min-width: 180px; flex: 1; }
+        .filter-item label { font-weight: 600; color: #1e4663; font-size: 0.85rem; display: block; margin-bottom: 6px; }
+        .filter-item select, .filter-item input { width: 100%; padding: 10px 14px; border: 1.5px solid #cfdee9; border-radius: 20px; font-size: 0.9rem; }
+        .btn { background: #2c7da0; color: white; border: none; padding: 10px 28px; border-radius: 40px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        .btn:hover { filter: brightness(0.92); }
+        .stat-cards { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 28px; }
+        .stat { background: white; padding: 18px 24px; border-radius: 28px; flex: 1; border: 1px solid #e2edf2; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+        .stat .value { font-size: 2rem; font-weight: 800; color: #1f3b4c; }
+        .table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid #e2edf2; background: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 14px 12px; border-bottom: 1px solid #e2edf2; }
         th { background: #f1f6fa; font-weight: 600; }
-        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-        .notification { background: #e0f2e9; border-left: 5px solid #2c7da0; padding: 12px 18px; border-radius: 20px; margin-bottom: 20px; display: none; }
-        .error { background: #fff2e6; border-left-color: #c44536; }
-        hr { margin: 20px 0; }
-        .logout-btn { background: #5e6f7e; margin-bottom: 20px; }
+        .loading { text-align: center; padding: 30px; color: #2c7da0; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #2c7da0; text-decoration: none; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-<div class="container" id="mainContainer" style="display: none;">
+<div class="container">
+    <a href="index.html" class="back-link">← Kembali ke Menu Utama</a>
     <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>📦 Kelola Data Master (Pekerja & Mesin)</h2>
-            <button id="logoutBtn" class="btn logout-btn" style="background:#5e6f7e;">🚪 Logout</button>
-        </div>
-        <div id="crudNotification" class="notification"></div>
-        <div class="flex-2col">
-            <div class="col">
-                <h3>👨‍🏭 Daftar Pekerja</h3>
-                <div class="input-group">
-                    <label>Nama Pekerja Baru</label>
-                    <input type="text" id="newPekerja" placeholder="Contoh: Slamet Riyadi">
-                </div>
-                <button class="btn" id="addPekerjaBtn">➕ Tambah Pekerja</button>
-                <hr>
-                <div class="table-wrapper" style="overflow-x:auto;">
-                    <table id="pekerjaTable">
-                        <thead><tr><th>Nama</th><th>Aksi</th></tr></thead>
-                        <tbody><tr><td colspan="2">Memuat...</td></tr></tbody>
-                    </table>
-                </div>
+        <h2>📊 Filter & Laporan Produksi</h2>
+        <div class="filter-bar">
+            <div class="filter-item">
+                <label>🔧 Mesin</label>
+                <select id="filterMesin"><option value="ALL">Semua Mesin</option></select>
             </div>
-            <div class="col">
-                <h3>🏭 Daftar Mesin</h3>
-                <div class="input-group">
-                    <label>Nama Mesin Baru</label>
-                    <input type="text" id="newMesin" placeholder="Contoh: Mesin CNC B">
-                </div>
-                <button class="btn" id="addMesinBtn">➕ Tambah Mesin</button>
-                <hr>
-                <div class="table-wrapper" style="overflow-x:auto;">
-                    <table id="mesinTable">
-                        <thead><tr><th>Nama</th><th>Aksi</th></tr></thead>
-                        <tbody><tr><td colspan="2">Memuat...</td></tr></tbody>
-                    </table>
-                </div>
+            <div class="filter-item">
+                <label>👥 Pekerja</label>
+                <select id="filterPekerja"><option value="ALL">Semua Pekerja</option></select>
             </div>
+            <div class="filter-item">
+                <label>📅 Dari Tanggal</label>
+                <input type="date" id="filterTglMulai">
+            </div>
+            <div class="filter-item">
+                <label>📅 Sampai Tanggal</label>
+                <input type="date" id="filterTglSelesai">
+            </div>
+            <button class="btn" id="refreshReportBtn">🔍 Terapkan Filter</button>
         </div>
-        <p style="font-size: 0.8rem; color: #5f7f8c;">⚠️ Perubahan akan langsung mempengaruhi dropdown di Input dan Laporan.</p>
+
+        <div class="stat-cards">
+            <div class="stat"><h4>📋 Total Record</h4><div class="value" id="totalRecords">0</div></div>
+            <div class="stat"><h4>📈 Rata-rata Persentase</h4><div class="value" id="avgPersen">0%</div></div>
+            <div class="stat"><h4>✅ Total Pcs Dikerjakan</h4><div class="value" id="totalPcsKerja">0</div></div>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Mesin</th><th>Pekerja</th><th>Nama File</th>
+                        <th>Jml Dikerjakan</th><th>Persen</th><th>Pemesan</th><th>Tanggal</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="8" class="loading">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
-<div id="loadingMsg" style="text-align:center; margin-top:50px;">Memeriksa otorisasi...</div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGoxq_XsXGifT4wWWvDbwnNmJUUbg4G9ag2rZGotjzwSpw0GjSuhr1dTcOnBUABAqM/exec";
 
-    // Proteksi session login
-    const isAuth = sessionStorage.getItem('crud_authenticated');
-    if (!isAuth || isAuth !== 'true') {
-        window.location.href = 'login.html?redirect=crud_master.html';
-    }
-
-    document.getElementById('mainContainer').style.display = 'block';
-    document.getElementById('loadingMsg').style.display = 'none';
-
-    function showMessage(msg, isError = false) {
-        const notif = document.getElementById('crudNotification');
-        notif.textContent = msg;
-        notif.className = 'notification' + (isError ? ' error' : '');
-        notif.style.display = 'block';
-        setTimeout(() => { notif.style.display = 'none'; }, 3000);
-    }
-
-    async function callAPI(action, params = {}) {
-        let url = `${SCRIPT_URL}?action=${action}`;
-        for (const key in params) {
-            url += `&${key}=${encodeURIComponent(params[key])}`;
-        }
-        const response = await fetch(url);
-        const result = await response.json();
-        if (result.status !== 'success') throw new Error(result.data || 'Terjadi kesalahan');
-        return result;
-    }
-
-    async function loadMasterCrud() {
+    async function loadFilterMaster() {
         try {
             const [mesinRes, pekerjaRes] = await Promise.all([
                 fetch(`${SCRIPT_URL}?action=getMesin`),
@@ -113,126 +85,112 @@
             ]);
             const mesinData = await mesinRes.json();
             const pekerjaData = await pekerjaRes.json();
-            if (mesinData.status === 'success') renderMesinCrud(mesinData.data.mesin);
-            else renderMesinCrud([]);
-            if (pekerjaData.status === 'success') renderPekerjaCrud(pekerjaData.data.pekerja);
-            else renderPekerjaCrud([]);
+
+            const filterMesin = document.getElementById('filterMesin');
+            const filterPekerja = document.getElementById('filterPekerja');
+
+            if (mesinData.status === 'success') {
+                filterMesin.innerHTML = '<option value="ALL">Semua Mesin</option>';
+                mesinData.data.mesin.forEach(m => {
+                    filterMesin.innerHTML += `<option value="${m}">${m}</option>`;
+                });
+            }
+            if (pekerjaData.status === 'success') {
+                filterPekerja.innerHTML = '<option value="ALL">Semua Pekerja</option>';
+                pekerjaData.data.pekerja.forEach(p => {
+                    filterPekerja.innerHTML += `<option value="${p}">${p}</option>`;
+                });
+            }
         } catch (err) {
-            showMessage('Gagal memuat data master CRUD', true);
+            console.error(err);
         }
     }
 
-    function renderPekerjaCrud(list) {
-        const tbody = document.querySelector('#pekerjaTable tbody');
-        if (!list.length) { tbody.innerHTML = '<tr><td colspan="2">Belum ada data</td></tr>'; return; }
+    async function loadLaporan() {
+        const mesin = document.getElementById('filterMesin').value;
+        const pekerja = document.getElementById('filterPekerja').value;
+        const tglMulai = document.getElementById('filterTglMulai').value;
+        const tglSelesai = document.getElementById('filterTglSelesai').value;
+
+        let url = `${SCRIPT_URL}?action=getLaporan&mesin=${encodeURIComponent(mesin)}&pekerja=${encodeURIComponent(pekerja)}`;
+        if (tglMulai) url += `&tglMulai=${tglMulai}`;
+        if (tglSelesai) url += `&tglSelesai=${tglSelesai}`;
+
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="loading">Mengambil data...</td></tr>';
+
+        try {
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.status === 'success') {
+                renderLaporan(result.data);
+            } else {
+                throw new Error("Gagal ambil data");
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="8">❌ Gagal memuat laporan</td></tr>';
+        }
+    }
+
+    function renderLaporan(data) {
+        const tbody = document.getElementById('tableBody');
+        if (!data.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Tidak ada data dengan filter tersebut</td></tr>';
+            document.getElementById('totalRecords').innerText = '0';
+            document.getElementById('avgPersen').innerText = '0%';
+            document.getElementById('totalPcsKerja').innerText = '0';
+            return;
+        }
+
+        let totalPcsKerja = 0;
+        let totalPersen = 0;
+        let persenCount = 0;
+
+        data.forEach(item => {
+            totalPcsKerja += Number(item.JumlahDikerjakan) || 0;
+            let persen = parseFloat(item.Persentase);
+            if (!isNaN(persen)) {
+                totalPersen += persen;
+                persenCount++;
+            }
+        });
+
+        document.getElementById('totalRecords').innerText = data.length;
+        document.getElementById('avgPersen').innerText = persenCount ? (totalPersen / persenCount).toFixed(2) + '%' : '0%';
+        document.getElementById('totalPcsKerja').innerText = totalPcsKerja.toLocaleString();
+
         let html = '';
-        list.forEach(nama => {
+        data.forEach(item => {
             html += `<tr>
-                        <td>${escapeHtml(nama)}</td>
-                        <td class="action-buttons">
-                            <button class="btn btn-sm btn-warning" onclick="editPekerjaCrud('${escapeHtml(nama)}')">✏️ Edit</button>
-                            <button class="btn btn-sm btn-danger" onclick="deletePekerjaCrud('${escapeHtml(nama)}')">🗑️ Hapus</button>
-                        </td>
+                        <td>${item.ID || '-'}</td>
+                        <td>${escapeHtml(item.Mesin || '')}</td>
+                        <td>${escapeHtml(item.Pekerja || '')}</td>
+                        <td>${escapeHtml(item.NamaFile || '')}</td>
+                        <td>${Number(item.JumlahDikerjakan || 0).toLocaleString()}</td>
+                        <td>${item.Persentase || '0%'}</td>
+                        <td>${escapeHtml(item.NamaPemesan || '')}</td>
+                        <td>${item.Timestamp ? new Date(item.Timestamp).toLocaleDateString('id-ID') : '-'}</td>
                     </tr>`;
         });
         tbody.innerHTML = html;
     }
 
-    function renderMesinCrud(list) {
-        const tbody = document.querySelector('#mesinTable tbody');
-        if (!list.length) { tbody.innerHTML = '<tr><td colspan="2">Belum ada data</td></tr>'; return; }
-        let html = '';
-        list.forEach(nama => {
-            html += `<tr>
-                        <td>${escapeHtml(nama)}</td>
-                        <td class="action-buttons">
-                            <button class="btn btn-sm btn-warning" onclick="editMesinCrud('${escapeHtml(nama)}')">✏️ Edit</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteMesinCrud('${escapeHtml(nama)}')">🗑️ Hapus</button>
-                        </td>
-                    </tr>`;
-        });
-        tbody.innerHTML = html;
-    }
-
-    function escapeHtml(str) { 
+    function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
-            if(m==='&') return '&amp;';
-            if(m==='<') return '&lt;';
-            if(m==='>') return '&gt;';
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
             return m;
         });
     }
 
-    window.editPekerjaCrud = async function(oldName) {
-        const newName = prompt('Edit nama pekerja:', oldName);
-        if (!newName || newName === oldName) return;
-        try {
-            await callAPI('updatePekerja', { oldName, newName });
-            showMessage('Pekerja berhasil diupdate', false);
-            loadMasterCrud();
-        } catch (err) { showMessage(err.message, true); }
-    };
+    document.getElementById('refreshReportBtn').addEventListener('click', loadLaporan);
 
-    window.deletePekerjaCrud = async function(nama) {
-        if (!confirm(`Hapus pekerja "${nama}"?`)) return;
-        try {
-            await callAPI('deletePekerja', { nama });
-            showMessage('Pekerja dihapus', false);
-            loadMasterCrud();
-        } catch (err) { showMessage(err.message, true); }
-    };
-
-    window.editMesinCrud = async function(oldName) {
-        const newName = prompt('Edit nama mesin:', oldName);
-        if (!newName || newName === oldName) return;
-        try {
-            await callAPI('updateMesin', { oldName, newName });
-            showMessage('Mesin berhasil diupdate', false);
-            loadMasterCrud();
-        } catch (err) { showMessage(err.message, true); }
-    };
-
-    window.deleteMesinCrud = async function(nama) {
-        if (!confirm(`Hapus mesin "${nama}"?`)) return;
-        try {
-            await callAPI('deleteMesin', { nama });
-            showMessage('Mesin dihapus', false);
-            loadMasterCrud();
-        } catch (err) { showMessage(err.message, true); }
-    };
-
-    async function addPekerja() {
-        const nama = document.getElementById('newPekerja').value.trim();
-        if (!nama) return showMessage('Nama pekerja tidak boleh kosong', true);
-        try {
-            await callAPI('addPekerja', { nama });
-            showMessage('Pekerja ditambahkan', false);
-            document.getElementById('newPekerja').value = '';
-            loadMasterCrud();
-        } catch (err) { showMessage(err.message, true); }
-    }
-
-    async function addMesin() {
-        const nama = document.getElementById('newMesin').value.trim();
-        if (!nama) return showMessage('Nama mesin tidak boleh kosong', true);
-        try {
-            await callAPI('addMesin', { nama });
-            showMessage('Mesin ditambahkan', false);
-            document.getElementById('newMesin').value = '';
-            loadMasterCrud();
-        } catch (err) { showMessage(err.message, true); }
-    }
-
-    document.getElementById('addPekerjaBtn').addEventListener('click', addPekerja);
-    document.getElementById('addMesinBtn').addEventListener('click', addMesin);
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        sessionStorage.removeItem('crud_authenticated');
-        sessionStorage.removeItem('crud_user');
-        window.location.href = 'index.html';
+    window.addEventListener('DOMContentLoaded', async () => {
+        await loadFilterMaster();
+        await loadLaporan();
     });
-
-    loadMasterCrud();
 </script>
 </body>
 </html>
