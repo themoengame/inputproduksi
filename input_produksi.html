@@ -7,7 +7,7 @@
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #e9f0f5; margin: 0; padding: 30px 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { max-width: 800px; width: 100%; background: white; border-radius: 32px; padding: 28px 32px; box-shadow: 0 12px 28px rgba(0,0,0,0.08); }
+        .container { max-width: 900px; width: 100%; background: white; border-radius: 32px; padding: 28px 32px; box-shadow: 0 12px 28px rgba(0,0,0,0.08); }
         h2 { font-size: 1.8rem; font-weight: 600; color: #1e3b4a; margin-top: 0; margin-bottom: 24px; border-left: 5px solid #2c7da0; padding-left: 20px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 28px; }
         .input-group { display: flex; flex-direction: column; gap: 8px; }
@@ -49,6 +49,10 @@
                 <input type="text" id="persentase" placeholder="Contoh: 100 atau 85.5" value="100" required>
             </div>
             <div class="input-group">
+                <label>🧵 Stitch</label>
+                <input type="text" id="stitch" placeholder="Contoh: 12345">
+            </div>
+            <div class="input-group">
                 <label>🧑 Nama Pemesan</label>
                 <input type="text" id="namaPemesan" required>
             </div>
@@ -61,7 +65,7 @@
     <div id="formFeedback" class="warning"></div>
     <hr>
     <div class="footer-note">
-        ⚡ Persentase diisi manual (tidak terhubung dengan Jumlah Dikerjakan)
+        ⚡ Persentase diisi manual | Stitch opsional
     </div>
 </div>
 
@@ -117,6 +121,7 @@
         const namaFile = document.getElementById('namaFile').value;
         const jumlahDikerjakan = document.getElementById('jumlahDikerjakan').value;
         const persentase = document.getElementById('persentase').value;
+        const stitch = document.getElementById('stitch').value;
         const namaPemesan = document.getElementById('namaPemesan').value;
 
         if (!mesin || !pekerja || !namaFile || !jumlahDikerjakan || !persentase || !namaPemesan) {
@@ -129,7 +134,11 @@
             return;
         }
 
-        const url = `${SCRIPT_URL}?action=simpanProduksi&mesin=${encodeURIComponent(mesin)}&pekerja=${encodeURIComponent(pekerja)}&namaFile=${encodeURIComponent(namaFile)}&jumlahDikerjakan=${encodeURIComponent(jumlahDikerjakan)}&persentase=${encodeURIComponent(persentase)}&namaPemesan=${encodeURIComponent(namaPemesan)}`;
+        let url = `${SCRIPT_URL}?action=simpanProduksi&mesin=${encodeURIComponent(mesin)}&pekerja=${encodeURIComponent(pekerja)}&namaFile=${encodeURIComponent(namaFile)}&jumlahDikerjakan=${encodeURIComponent(jumlahDikerjakan)}&persentase=${encodeURIComponent(persentase)}&namaPemesan=${encodeURIComponent(namaPemesan)}`;
+        
+        if (stitch) {
+            url += `&stitch=${encodeURIComponent(stitch)}`;
+        }
 
         try {
             const response = await fetch(url);
