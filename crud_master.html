@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kelola Master Data - Proteksi</title>
+    <title>Kelola Master Data</title>
     <style>
-        /* Sama seperti style crud sebelumnya */
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #eef2f5; margin: 0; padding: 30px 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
@@ -78,17 +77,15 @@
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGoxq_XsXGifT4wWWvDbwnNmJUUbg4G9ag2rZGotjzwSpw0GjSuhr1dTcOnBUABAqM/exec";
 
-    // Proteksi: cek session login
+    // Proteksi session login
     const isAuth = sessionStorage.getItem('crud_authenticated');
     if (!isAuth || isAuth !== 'true') {
         window.location.href = 'login.html?redirect=crud_master.html';
     }
 
-    // Tampilkan container setelah autentikasi
     document.getElementById('mainContainer').style.display = 'block';
     document.getElementById('loadingMsg').style.display = 'none';
 
-    // Fungsi-fungsi CRUD sama seperti sebelumnya
     function showMessage(msg, isError = false) {
         const notif = document.getElementById('crudNotification');
         notif.textContent = msg;
@@ -97,15 +94,14 @@
         setTimeout(() => { notif.style.display = 'none'; }, 3000);
     }
 
-    async function callAPI(action, data = {}) {
-        const payload = { action, ...data };
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+    async function callAPI(action, params = {}) {
+        let url = `${SCRIPT_URL}?action=${action}`;
+        for (const key in params) {
+            url += `&${key}=${encodeURIComponent(params[key])}`;
+        }
+        const response = await fetch(url);
         const result = await response.json();
-        if (result.status !== 'success') throw new Error(result.message || 'Terjadi kesalahan');
+        if (result.status !== 'success') throw new Error(result.data || 'Terjadi kesalahan');
         return result;
     }
 
@@ -137,7 +133,7 @@
                             <button class="btn btn-sm btn-warning" onclick="editPekerjaCrud('${escapeHtml(nama)}')">✏️ Edit</button>
                             <button class="btn btn-sm btn-danger" onclick="deletePekerjaCrud('${escapeHtml(nama)}')">🗑️ Hapus</button>
                         </td>
-                     </tr>`;
+                    </tr>`;
         });
         tbody.innerHTML = html;
     }
@@ -153,12 +149,20 @@
                             <button class="btn btn-sm btn-warning" onclick="editMesinCrud('${escapeHtml(nama)}')">✏️ Edit</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteMesinCrud('${escapeHtml(nama)}')">🗑️ Hapus</button>
                         </td>
-                     </tr>`;
+                    </tr>`;
         });
         tbody.innerHTML = html;
     }
 
-    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m) { if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m; }); }
+    function escapeHtml(str) { 
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m==='&') return '&amp;';
+            if(m==='<') return '&lt;';
+            if(m==='>') return '&gt;';
+            return m;
+        });
+    }
 
     window.editPekerjaCrud = async function(oldName) {
         const newName = prompt('Edit nama pekerja:', oldName);
@@ -169,14 +173,16 @@
             loadMasterCrud();
         } catch (err) { showMessage(err.message, true); }
     };
+
     window.deletePekerjaCrud = async function(nama) {
-        if (!confirm(`Hapus pekerja "${nama}"? Data produksi terkait tidak terhapus.`)) return;
+        if (!confirm(`Hapus pekerja "${nama}"?`)) return;
         try {
             await callAPI('deletePekerja', { nama });
             showMessage('Pekerja dihapus', false);
             loadMasterCrud();
         } catch (err) { showMessage(err.message, true); }
     };
+
     window.editMesinCrud = async function(oldName) {
         const newName = prompt('Edit nama mesin:', oldName);
         if (!newName || newName === oldName) return;
@@ -186,6 +192,7 @@
             loadMasterCrud();
         } catch (err) { showMessage(err.message, true); }
     };
+
     window.deleteMesinCrud = async function(nama) {
         if (!confirm(`Hapus mesin "${nama}"?`)) return;
         try {
@@ -205,6 +212,7 @@
             loadMasterCrud();
         } catch (err) { showMessage(err.message, true); }
     }
+
     async function addMesin() {
         const nama = document.getElementById('newMesin').value.trim();
         if (!nama) return showMessage('Nama mesin tidak boleh kosong', true);
