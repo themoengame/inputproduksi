@@ -139,9 +139,42 @@
         }
     }
 
+    // Fungsi escapeHtml yang sudah diperbaiki
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        // Konversi ke string
+        const stringValue = String(str);
+        return stringValue.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Format tanggal dengan aman
+    function formatDate(timestamp) {
+        if (!timestamp) return '-';
+        try {
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return '-';
+            return date.toLocaleDateString('id-ID');
+        } catch (e) {
+            return '-';
+        }
+    }
+
+    // Format persentase dengan aman
+    function formatPersentase(persen) {
+        if (persen === null || persen === undefined) return '0%';
+        const stringValue = String(persen);
+        if (stringValue.includes('%')) return stringValue;
+        return stringValue + '%';
+    }
+
     function renderLaporan(data) {
         const tbody = document.getElementById('tableBody');
-        if (!data.length) {
+        if (!data || data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Tidak ada data dengan filter tersebut</td></tr>';
             document.getElementById('totalRecords').innerText = '0';
             document.getElementById('avgPersen').innerText = '0%';
@@ -169,28 +202,18 @@
         let html = '';
         data.forEach(item => {
             html += `<tr>
-                        <td>${item.ID || '-'}</td>
-                        <td>${escapeHtml(item.Mesin || '')}</td>
-                        <td>${escapeHtml(item.Pekerja || '')}</td>
-                        <td>${escapeHtml(item.NamaFile || '')}</td>
+                        <td>${escapeHtml(item.ID)}</td>
+                        <td>${escapeHtml(item.Mesin)}</td>
+                        <td>${escapeHtml(item.Pekerja)}</td>
+                        <td>${escapeHtml(item.NamaFile)}</td>
                         <td>${Number(item.JumlahDikerjakan || 0).toLocaleString()}</td>
-                        <td>${item.Persentase || '0%'}</td>
-                        <td>${escapeHtml(item.stitch || '-')}</td>
-                        <td>${escapeHtml(item.NamaPemesan || '')}</td>
-                        <td>${item.Timestamp ? new Date(item.Timestamp).toLocaleDateString('id-ID') : '-'}</td>
+                        <td>${formatPersentase(item.Persentase)}</td>
+                        <td>${escapeHtml(item.stitch)}</td>
+                        <td>${escapeHtml(item.NamaPemesan)}</td>
+                        <td>${formatDate(item.Timestamp)}</td>
                      </tr>`;
         });
         tbody.innerHTML = html;
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
     }
 
     document.getElementById('refreshReportBtn').addEventListener('click', loadLaporan);
