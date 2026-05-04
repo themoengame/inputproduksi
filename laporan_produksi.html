@@ -62,12 +62,19 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th><th>Mesin</th><th>Pekerja</th><th>Nama File</th>
-                        <th>Jml Dikerjakan</th><th>Persen</th><th>Pemesan</th><th>Tanggal</th>
+                        <th>ID</th>
+                        <th>Mesin</th>
+                        <th>Pekerja</th>
+                        <th>Nama File</th>
+                        <th>Jml Dikerjakan</th>
+                        <th>Persen</th>
+                        <th>Stitch</th>
+                        <th>Pemesan</th>
+                        <th>Tanggal</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="8" class="loading">Memuat data...</td></tr>
+                    <tr><td colspan="9" class="loading">Memuat data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -116,7 +123,7 @@
         if (tglMulai) url += `&tglMulai=${tglMulai}`;
         if (tglSelesai) url += `&tglSelesai=${tglSelesai}`;
 
-        document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="loading">Mengambil data...</td></tr>';
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="loading">Mengambil data...</td></tr>';
 
         try {
             const response = await fetch(url);
@@ -128,14 +135,14 @@
             }
         } catch (err) {
             console.error(err);
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="8">❌ Gagal memuat laporan</td></tr>';
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="9">❌ Gagal memuat laporan</td></tr>';
         }
     }
 
     function renderLaporan(data) {
         const tbody = document.getElementById('tableBody');
         if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Tidak ada data dengan filter tersebut</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Tidak ada data dengan filter tersebut</td></tr>';
             document.getElementById('totalRecords').innerText = '0';
             document.getElementById('avgPersen').innerText = '0%';
             document.getElementById('totalPcsKerja').innerText = '0';
@@ -168,9 +175,10 @@
                         <td>${escapeHtml(item.NamaFile || '')}</td>
                         <td>${Number(item.JumlahDikerjakan || 0).toLocaleString()}</td>
                         <td>${item.Persentase || '0%'}</td>
+                        <td>${escapeHtml(item.stitch || '-')}</td>
                         <td>${escapeHtml(item.NamaPemesan || '')}</td>
                         <td>${item.Timestamp ? new Date(item.Timestamp).toLocaleDateString('id-ID') : '-'}</td>
-                    </tr>`;
+                     </tr>`;
         });
         tbody.innerHTML = html;
     }
