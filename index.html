@@ -16,7 +16,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             width: 100%;
             background: white;
             border-radius: 48px;
@@ -36,7 +36,7 @@
         }
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 24px;
             margin-bottom: 30px;
         }
@@ -49,6 +49,8 @@
             transition: all 0.2s ease;
             border: 1px solid #e2edf2;
             box-shadow: 0 4px 8px rgba(0,0,0,0.02);
+            cursor: pointer;
+            display: block;
         }
         .menu-card:hover {
             transform: translateY(-6px);
@@ -85,16 +87,21 @@
     <h1>🏭 Sistem Manajemen Produksi</h1>
     <div class="sub">Pilih menu yang tersedia</div>
     <div class="menu-grid">
+        <!-- Tombol Input Produksi -->
         <a href="input_produksi.html" class="menu-card">
             <div class="menu-icon">📝</div>
             <div class="menu-title">Input Produksi</div>
             <div class="menu-desc">Tambah data produksi harian</div>
         </a>
+        
+        <!-- Tombol Filter Laporan -->
         <a href="laporan_produksi.html" class="menu-card">
             <div class="menu-icon">📊</div>
             <div class="menu-title">Filter Laporan</div>
             <div class="menu-desc">Lihat laporan dengan filter</div>
         </a>
+        
+        <!-- Tombol Kelola Master (perlu login) -->
         <a href="login.html?redirect=crud_master.html" class="menu-card">
             <div class="menu-icon">⚙️</div>
             <div class="menu-title">Kelola Master</div>
